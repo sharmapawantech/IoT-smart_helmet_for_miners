@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Alerts — MineGUARD{% endblock %}
+{% block page_title %}Alerts Log{% endblock %}
+
+{% block content %}
+<div class="chart-card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <h3 class="chart-title" style="margin:0">All Alerts</h3>
+    <span id="alertCount" class="count-badge">—</span>
+  </div>
+  <div id="alertsContainer" class="alerts-list">
+    <p class="muted-msg">Loading alerts…</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Timestamp fix: DB is UTC naive → append Z → JS converts to local time ──
+function toLocalDate(isoStr) {
+  if (!isoStr) return new Date();
+  const s = /[Z+]/.test(isoStr.slice(-6)) ? isoStr : isoStr + 'Z';
+  return new Date(s);
+}
+
+function fmtFull(isoStr) {
+  return toLocalDate(isoStr).toLocaleString([], {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+  });
+}
+
+async function loadAlerts() {
+  const res    = await fetch('/api/alerts?limit=200');
+  const alerts = await res.json();
+  document.getElementById('alertCount').textContent = alerts.length + ' alerts';
+
+  const container = document.getElementById('alertsContainer');
+  if (!alerts.length) {
+    container.innerHTML = '<p class="muted-msg">No alerts recorded yet.</p>';
+    return;
+  }
+
+  container.innerHTML = alerts.map(a => {
+    const levelClass = a.level === 'danger' ? 'alert-danger'
+                     : a.level === 'safe'   ? 'alert-safe'
+                     : 'alert-warning';
+    const icon = a.alert_type === 'fall'          ? '🤸'
+               : a.alert_type === 'methane'       ? '💨'
+               : a.alert_type === 'temperature'   ? '🌡️'
+               : a.alert_type === 'humidity'      ? '💧'
+               : a.alert_type === 'safe_recovery' ? '✅'
+               : '⚠️';
+    return `
+      <div class="alert-row ${levelClass} ${a.acknowledged ? 'acked' : ''}">
+        <div class="alert-row-left">
+          <span class="alert-row-icon">${icon}</span>
+          <div class="alert-row-body">
+            <span class="alert-row-type">${a.alert_type.replace('_',' ').toUpperCase()}</span>
+            <span class="alert-row-msg">${a.message}</span>
+            <span class="alert-row-time">${fmtFull(a.timestamp)}</span>
+          </div>
+        </div>
+        <div class="alert-row-right">
+          <span class="level-pill ${levelClass}">${a.level.toUpperCase()}</span>
+          ${!a.acknowledged
+            ? `<button class="btn-ack" onclick="ackAlert(${a.id}, this)">Acknowledge</button>`
+            : `<span class="acked-label">✓ Done</span>`}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function ackAlert(id, btn) {
+  await fetch(`/api/alerts/${id}/acknowledge`, { method: 'POST' });
+  btn.closest('.alert-row').classList.add('acked');
+  btn.outerHTML = '<span class="acked-label">✓ Done</span>';
+}
+
+loadAlerts();
+setInterval(loadAlerts, 10000);
+</script>
+{% endblock %}

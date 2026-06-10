@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — S.A.F.E. MINER{% endblock %}
+{% block page_title %}Live Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <!-- ── Alert Banner ── -->
+  <div class="alert-banner hidden" id="alertBanner">
+    <span class="banner-icon" id="bannerIcon">⚠️</span>
+    <span class="banner-text" id="bannerText">Alert</span>
+    <button class="banner-close" onclick="this.parentElement.classList.add('hidden')">✕</button>
+  </div>
+
+  <!-- ── Stat Cards ── -->
+  <section class="stat-grid">
+
+    <div class="stat-card" id="card-temp">
+      <div class="stat-top">
+        <span class="stat-sensor">DHT22</span>
+        <span class="stat-icon-big">🌡️</span>
+      </div>
+      <div class="stat-label">Temperature</div>
+      <div class="stat-value-row">
+        <span class="stat-value" id="val-temp">--</span>
+        <span class="stat-unit">°C</span>
+      </div>
+      <div class="stat-footer">
+        <span class="stat-badge" id="badge-temp">LOADING</span>
+        <span class="stat-limits">W:42° D:50°</span>
+      </div>
+    </div>
+
+    <div class="stat-card" id="card-hum">
+      <div class="stat-top">
+        <span class="stat-sensor">DHT22</span>
+        <span class="stat-icon-big">💧</span>
+      </div>
+      <div class="stat-label">Humidity</div>
+      <div class="stat-value-row">
+        <span class="stat-value" id="val-hum">--</span>
+        <span class="stat-unit">%</span>
+      </div>
+      <div class="stat-footer">
+        <span class="stat-badge" id="badge-hum">LOADING</span>
+        <span class="stat-limits">W:80% D:95%</span>
+      </div>
+    </div>
+
+    <div class="stat-card" id="card-gas">
+      <div class="stat-top">
+        <span class="stat-sensor">MQ4</span>
+        <span class="stat-icon-big">💨</span>
+      </div>
+      <div class="stat-label">Methane Gas</div>
+      <div class="stat-value-row">
+        <span class="stat-value" id="val-gas">--</span>
+        <span class="stat-unit">ppm</span>
+      </div>
+      <div class="stat-footer">
+        <span class="stat-badge" id="badge-gas">LOADING</span>
+        <span class="stat-limits">W:650 D:800</span>
+      </div>
+    </div>
+
+    <div class="stat-card" id="card-fall">
+      <div class="stat-top">
+        <span class="stat-sensor">MPU6050</span>
+        <span class="stat-icon-big">🤸</span>
+      </div>
+      <div class="stat-label">Fall Detection</div>
+      <div class="stat-value-row">
+        <span class="stat-value" id="val-fall" style="font-size:1.6rem">--</span>
+      </div>
+      <div class="stat-footer">
+        <span class="stat-badge" id="badge-fall">LOADING</span>
+        <span class="stat-limits">Impact sensor</span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ── Gauges Row ── -->
+  <section class="gauge-row">
+    <div class="chart-card">
+      <h3 class="chart-title">Temperature Gauge</h3>
+      <canvas id="gaugeTemp" height="160"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 class="chart-title">Humidity Gauge</h3>
+      <canvas id="gaugeHum" height="160"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 class="chart-title">Methane Gauge</h3>
+      <canvas id="gaugeGas" height="160"></canvas>
+    </div>
+  </section>
+
+  <!-- ── Line Charts ── -->
+  <section class="chart-row-2">
+    <div class="chart-card chart-wide">
+      <h3 class="chart-title">Temperature &amp; Humidity — Last 50 Readings</h3>
+      <canvas id="lineChart" height="90"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 class="chart-title">Methane (ppm) Over Time</h3>
+      <canvas id="gasLine" height="90"></canvas>
+    </div>
+  </section>
+
+  <!-- ── Bar + Pie ── -->
+  <section class="chart-row-2">
+    <div class="chart-card">
+      <h3 class="chart-title">Sensor vs Threshold Summary</h3>
+      <canvas id="pieChart" height="120"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 class="chart-title">Recent Alerts</h3>
+      <div id="alertsList" class="alerts-list-inline">
+        <p class="muted-msg">Waiting for data…</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}?v=5"></script>
+{% endblock %}

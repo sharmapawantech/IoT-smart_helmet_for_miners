@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}History — MineGuard{% endblock %}
+{% block page_title %}Historical Data{% endblock %}
+
+{% block content %}
+<div class="history-wrap">
+
+  <div class="history-controls">
+    <div class="history-select-wrap">
+      <label>Show last
+        <select id="limitSelect" onchange="loadHistory()">
+          <option value="50">50 readings</option>
+          <option value="100">100 readings</option>
+          <option value="200">200 readings</option>
+          <option value="500">500 readings</option>
+        </select>
+      </label>
+    </div>
+    <a href="/api/export/csv" class="btn-export">⬇️ Download CSV</a>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:1.25rem">
+    <h3 class="chart-title">Temperature &amp; Humidity History</h3>
+    <canvas id="histTempHum" height="80"></canvas>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:1.25rem">
+    <h3 class="chart-title">Methane (ppm) History</h3>
+    <canvas id="histGas" height="80"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <h3 class="chart-title">Data Table</h3>
+    <div class="table-wrap">
+      <table id="histTable">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Temp (°C)</th>
+            <th>Humidity (%)</th>
+            <th>Methane (ppm)</th>
+            <th>Fall</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="histBody">
+          <tr><td colspan="6" class="muted-msg">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/history.js') }}?v=5"></script>
+{% endblock %}

@@ -1,0 +1,6 @@
+# ── ThingSpeak (get from thingspeak.com → your channel → API Keys tab) ──
+THINGSPEAK_API_KEY=YOUR_THINGSPEAK_API_KEY_HERE
+THINGSPEAK_CHANNEL_ID=  YOUR_THINGSPEAK_CHANNEL_ID_HERE
+
+# ── Flask ──
+SECRET_KEY=mineguard-change-this-in-production
