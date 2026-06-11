@@ -1,0 +1,226 @@
+12. CODEBASE: 
+TRASNMITTER CODE : 
+#include <Wire.h>
+#include <SPI.h>
+#include <LoRa.h>
+#include <DHT.h>
+// -------- DHT --------
+#define LED_PIN D0
+#define DHTPIN D4
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+// -------- MPU --------
+const int MPU_addr = 0x68;
+int16_t AcX, AcY, AcZ;
+// -------- LoRa --------
+#define SS D8
+// -------- BUZZER --------
+#define BUZZER D3
+bool remoteAlert = false;
+unsigned long alertTimer = 0;
+void setup() {
+  Serial.begin(9600);
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+  digitalWrite(BUZZER, LOW);
+  Wire.begin(D2, D1);
+  // MPU wake
+  Wire.beginTransmission(MPU_addr);
+  Wire.write(0x6B);
+  Wire.write(0);
+  Wire.endTransmission(true);
+  dht.begin();
+  SPI.begin();
+  LoRa.setPins(SS, -1, -1);
+  if (!LoRa.begin(433E6)) {
+    Serial.println("LoRa Failed!");
+    while (1);
+  }
+  Serial.println("🔥 TX READY 🔥");
+}
+void loop() {
+  // 🔥 RECEIVE WINDOW
+  LoRa.receive();
+  unsigned long start = millis();
+  while (millis() - start < 400) {
+    int packetSize = LoRa.parsePacket();
+    if (packetSize) {
+      String msg = "";
+      while (LoRa.available()) {
+        msg += (char)LoRa.read();
+      }
+      msg.trim();
+      Serial.println("📩 Received: " + msg);
+      if (msg.indexOf("STAY ALERT") != -1) {
+        remoteAlert = true;
+        alertTimer = millis();
+        Serial.println("⚠️ ALERT RECEIVED");
+      }
+    }
+  }
+  // -------- SENSOR --------
+  int gas = analogRead(A0);
+  float temp = dht.readTemperature();
+  float hum  = dht.readHumidity();
+  Wire.beginTransmission(MPU_addr);
+  Wire.write(0x3B);
+  Wire.endTransmission(false);
+  Wire.requestFrom(MPU_addr, 6, true);
+  AcX = Wire.read() << 8 | Wire.read();
+  AcZ = Wire.read() << 8 | Wire.read();
+  float Ax = AcX / 16384.0;
+  float Az = AcZ / 16384.0;
+  String overall = "SAFE ✓";
+  if (temp > 55 || hum > 80 || gas > 850 || Az < 0.0) {
+    overall = "DANGER 🚨";
+  }
+  else if (temp > 43 || hum > 65 || gas > 700 || abs(Ax) > 0.25) {
+    overall = "WARNING ⚠";
+  }
+  // -------- BUZZER --------
+  if (remoteAlert && millis() - alertTimer > 5000) {
+    remoteAlert = false;
+  }
+  if (remoteAlert || overall == "DANGER 🚨") {
+    digitalWrite(BUZZER, HIGH);
+    digitalWrite(LED_PIN, HIGH);
+  } else {
+    digitalWrite(BUZZER, LOW);
+    digitalWrite(LED_PIN, LOW);
+  }
+  // -------- SERIAL --------
+  Serial.println("----------------------------");
+  Serial.print("STATUS: "); Serial.println(overall);
+  Serial.print("Temp: "); Serial.println(temp);
+  Serial.print("Hum: "); Serial.println(hum);
+  Serial.print("Gas: "); Serial.println(gas);
+  Serial.print("Z: "); Serial.println(Az);
+  Serial.println("----------------------------");
+  // -------- SEND --------
+  String packet = String(gas) + "," + String(temp,1) + "," + String(hum,1) + "," + String(Az,2);
+  LoRa.idle();
+  delay(50);
+  LoRa.beginPacket();
+  LoRa.print(packet);
+  LoRa.endPacket();
+  Serial.println("📡 Sent: " + packet);
+ delay(800);
+}
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+RECIVER CODE :
+#include <SPI.h>
+#include <LoRa.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <ESP8266WiFi.h>
+#include <ThingSpeak.h>
+// -------- WIFI --------
+const char* ssid = "box";
+const char* password = "10101010";
+WiFiClient client;
+unsigned long channelNumber = 3314327;
+const char* writeAPIKey = "3LLBBIYXKHDE7ZP8";
+// -------- OLED --------
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+// -------- LoRa --------
+#define SS D8
+// -------- BUTTON --------
+#define BUTTON_PIN D3
+int gas = 0;
+float temp = 0;
+float hum = 0;
+float Az = 0;
+unsigned long lastTS = 0;
+void setup() {
+  Serial.begin(9600);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  Wire.begin(D2, D1);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.setTextColor(WHITE);
+  // WiFi
+  Serial.print("Connecting WiFi");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(300);
+    Serial.print(".");
+  }
+  Serial.println(" Connected!");
+  ThingSpeak.begin(client);
+  SPI.begin();
+  LoRa.setPins(SS, -1, -1);
+  if (!LoRa.begin(433E6)) {
+    Serial.println("LoRa Failed");
+    while (1);
+  }
+  Serial.println("🔥 RX READY 🔥");
+}
+void loop() {
+  // -------- RECEIVE --------
+  int packetSize = LoRa.parsePacket();
+  if (packetSize) {
+    String received = "";
+    while (LoRa.available()) {
+      received += (char)LoRa.read();
+    }
+    received.trim();
+    int c1 = received.indexOf(',');
+    int c2 = received.indexOf(',', c1 + 1);
+    int c3 = received.indexOf(',', c2 + 1);
+    if (c1 == -1 || c2 == -1 || c3 == -1) return;
+    gas = received.substring(0, c1).toInt();
+    temp = received.substring(c1 + 1, c2).toFloat();
+    hum = received.substring(c2 + 1, c3).toFloat();
+    Az = received.substring(c3 + 1).toFloat();
+    String status = "SAFE ✓";
+    if (temp > 55 || hum > 80 || gas > 850 || Az < 0.5) {
+      status = "DANGER 🚨";
+    }
+    else if (temp > 43 || hum > 65 || gas > 700 || abs(Az) > 1.2) {
+      status = "WARNING ⚠";
+    }
+    // -------- SERIAL SAME AS TX --------
+    Serial.println("----------------------------");
+    Serial.print("STATUS: "); Serial.println(status);
+    Serial.print("Temp: "); Serial.println(temp);
+    Serial.print("Hum: "); Serial.println(hum);
+    Serial.print("Gas: "); Serial.println(gas);
+    Serial.print("Z: "); Serial.println(Az);
+    Serial.println("----------------------------");
+    // -------- OLED --------
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setCursor(10, 20);
+    if(status == "SAFE ✓") display.println("SAFE");
+    else if(status == "WARNING ⚠") display.println("WARN");
+    else display.println("DANGER");
+    display.display();
+  }
+  // 🔥 BUTTON ALERT (MULTI SEND)
+  if (digitalRead(BUTTON_PIN) == LOW) {
+    Serial.println("⚠️ Sending STAY ALERT");
+    for (int i = 0; i < 3; i++) {
+      LoRa.idle();
+      delay(50);
+      LoRa.beginPacket();
+      LoRa.print("STAY ALERT");
+      LoRa.endPacket();
+      delay(150);
+    }
+    LoRa.receive();
+  }
+  // -------- THINGSPEAK --------
+  if (millis() - lastTS > 15000) {
+    ThingSpeak.setField(1, gas);
+    ThingSpeak.setField(2, temp);
+    ThingSpeak.setField(3, hum);
+    ThingSpeak.setField(4, Az);
+    ThingSpeak.writeFields(channelNumber, writeAPIKey);
+    Serial.println("☁️ Uploaded to ThingSpeak");
+    lastTS = millis();
+  }
+  delay(50);
+}
