@@ -105,40 +105,40 @@ The system is structured into four hierarchical layers:
 | MQ-4 Pin | NodeMCU Pin | Wire Colour |
 |---|---|---|
 | VCC | Vin (5V) | Red / Orange |
-| GND | GND | Black |
-| AOUT | A0 | Blue |
+| GND | GND | Sky blue |
+| AOUT | A0 | Dark Blue |
 
 #### DHT22 (AM2302) → NodeMCU
 
 | DHT22 Pin | NodeMCU Pin | Wire Colour |
 |---|---|---|
-| VCC | 3V | Red |
-| GND | GND | Black |
+| VCC | 3V | Green |
+| GND | GND | Pink |
 | DATA | D4 | Purple / Pink |
 
 #### MPU-6050 → NodeMCU (I2C)
 
 | MPU-6050 Pin | NodeMCU Pin | Wire Colour |
 |---|---|---|
-| VCC | 3V | Red |
-| GND | GND | Black |
-| SDA | D2 | Yellow |
-| SCL | D1 | Blue/Green |
+| VCC | 3V | Yellow |
+| GND | GND | Green |
+| SDA | D2 | Blue |
+| SCL | D1 | Yellow |
 
 #### Buzzer Module → NodeMCU
 
 | Buzzer Pin | NodeMCU Pin | Wire Colour |
 |---|---|---|
 | GND | GND | Black |
-| I/O | D3 | Purple |
-| VCC | 3V / Vin | Orange |
+| I/O | D3 | Orange |
+| VCC | 3V / Vin | Purple |
 
 #### SX1278 LoRa RA-02 → NodeMCU (SPI)
 
 | LoRa Pin | NodeMCU Pin | Wire Colour |
 |---|---|---|
-| VCC | 3V | Red |
-| GND | GND | Black |
+| VCC | 3V | Brown |
+| GND | GND | Purple |
 | SCK | D5 | Green |
 | MISO | D6 | Teal |
 | MOSI | D7 | Blue |
