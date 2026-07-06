@@ -341,25 +341,7 @@ The receiver uploads every **15 seconds** (`millis() - lastTS > 15000`). This ma
 3. Set repeat condition: re-trigger **every 10 minutes** while the condition persists.
 
 ### 4. Downloading Data as CSV
-ThingSpeak allows full data export as CSV for offline analysis:
-
-1. Open your channel page on ThingSpeak
-2. Click the **Data Export** tab (or use the API URL below)
-3. Download all data:
-   ```
-   https://api.thingspeak.com/channels/YOUR_CHANNEL_ID/feeds.csv?api_key=YOUR_READ_API_KEY
-   ```
-4. Download a specific field:
-   ```
-   https://api.thingspeak.com/channels/YOUR_CHANNEL_ID/fields/1.csv?api_key=YOUR_READ_API_KEY&results=1000
-   ```
-5. Limit by date range (optional):
-   ```
-   https://api.thingspeak.com/channels/YOUR_CHANNEL_ID/feeds.csv?start=2026-04-01%2000:00:00&end=2026-04-07%2023:59:59
-   ```
-
-> The exported CSV contains columns: `created_at`, `entry_id`, `field1` (Gas), `field2` (Temp), `field3` (Humidity), `field4` (Az). It can be opened directly in Excel, Google Sheets, or imported into MATLAB for analysis.
-
+Webpage allows full data export as CSV for offline 
 ---
 
 ## Live Dashboard
